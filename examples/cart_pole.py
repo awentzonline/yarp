@@ -146,7 +146,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--ignore-existing', action='store_true')
     arg_parser.add_argument('--model-name', default='eas_agent')
     arg_parser.add_argument('--save-rate', type=int, default=10)
-    arg_parser.add_argument('--num-hidden', type=int, default=16)
+    arg_parser.add_argument('--num-hidden', type=int, default=32)
     arg_parser.add_argument('--memory', type=int, default=30000)
     arg_parser.add_argument('--agent', default='duel')
     arg_parser.add_argument('--lr', type=float, default=0.000625)
