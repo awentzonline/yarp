@@ -16,7 +16,7 @@ from keras.optimizers import Adam, RMSprop
 from yarp.advantage import AdvantageAggregator
 from yarp.agent import QAgent
 from yarp.memory import Memory
-from yarp.policy import AnnealedGreedyQPolicy, GreedyQPolicy
+from yarp.policy import AnnealedGreedyQPolicy, EpsilonGreedyQPolicy, GreedyQPolicy
 
 
 class CartPoleAgent(QAgent):
@@ -68,7 +68,7 @@ def print_stats(label, arr):
 
 def main(config, api_key):
     print('creating environment')
-    environment = gym.make('CartPole-v0')
+    environment = gym.make(config.env)
     environment = gym.wrappers.Monitor(
         environment, config.monitor_path, force=True
     )
@@ -85,8 +85,8 @@ def main(config, api_key):
         agent, config.epsilon, config.min_epsilon,
         config.anneal_steps
     )
-    eval_policy = GreedyQPolicy(agent)
-
+    #eval_policy = GreedyQPolicy(agent)
+    eval_policy = EpsilonGreedyQPolicy(agent, 0.01)
     print('simulating...')
     epsilon = config.epsilon
     d_epsilon = 1. / float(config.anneal_steps) * config.epsilon
@@ -114,10 +114,9 @@ def main(config, api_key):
             )
             recent_episode_rewards += episode_rewards
             needs_training = np.mean(episode_rewards) < 196.
-            print needs_training
-            # print_stats('Loss', losses)
-            # print_stats('All rewards', rewards)
-            # print_stats('Episode rewards', episode_rewards)
+            print_stats('Loss', losses)
+            print_stats('All rewards', rewards)
+            print_stats('Episode rewards', episode_rewards)
             if (epoch_i + 1) % config.save_rate == 0:
                 agent.save_model()
             if len(recent_episode_rewards) == 100 and np.mean(recent_episode_rewards) >= 195. and np.min(recent_episode_rewards) >= 195.:
@@ -132,7 +131,7 @@ def main(config, api_key):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser('cart/pole solver')
-    arg_parser.add_argument('--discount', type=float, default=0.95)
+    arg_parser.add_argument('--discount', type=float, default=0.99)
     arg_parser.add_argument('--episodes', type=int, default=5)
     arg_parser.add_argument('--epsilon', type=float, default=1.0)
     arg_parser.add_argument('--min-epsilon', type=float, default=0.05)
@@ -142,15 +141,15 @@ if __name__ == '__main__':
     arg_parser.add_argument('--sim-episodes', type=int, default=10)
     arg_parser.add_argument('--learn-steps', type=int, default=300)
     arg_parser.add_argument('--learn-episodes', type=int, default=100)
-    arg_parser.add_argument('--num-canvases', type=int, default=3)
     arg_parser.add_argument('--ignore-existing', action='store_true')
     arg_parser.add_argument('--model-name', default='eas_agent')
     arg_parser.add_argument('--save-rate', type=int, default=10)
     arg_parser.add_argument('--num-hidden', type=int, default=32)
     arg_parser.add_argument('--memory', type=int, default=30000)
     arg_parser.add_argument('--agent', default='duel')
-    arg_parser.add_argument('--lr', type=float, default=0.000625)
+    arg_parser.add_argument('--lr', type=float, default=0.0000625)
     arg_parser.add_argument('--monitor-path', default='monitor-data')
+    arg_parser.add_argument('--env', default='CartPole-v0')
     config = arg_parser.parse_args()
 
     api_key = os.environ.get('AIGYM_API_KEY' ,'').strip()

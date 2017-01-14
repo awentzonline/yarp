@@ -46,8 +46,8 @@ class QAgent(object):
         q = self.q(states)
         return np.argmax(q, axis=1)
 
-    def q(self, states, train=False):
-        if train:
+    def q(self, states, target=False):
+        if target:
             model = self.target_model
         else:
             model = self.model
@@ -104,12 +104,14 @@ class QAgent(object):
         full_history = []
         for i in range(num_batches):
             for s, a, r, s2, t in self.memory.sample(32):
-                full_history.append(self.train_step(s, a, r, s2, t))
+                full_history.append(
+                    self.train_step(s, a, r, s2, t, discount=self.config.discount)
+                )
         return full_history
 
     def train_step(self, s, a, r, s1, t, discount=0.9):
-        q0 = self.q(s, train=False)
-        q1 = self.q(s1, train=True)
+        q0 = self.q(s, target=False)
+        q1 = self.q(s1, target=True)
         max_q1 = np.max(q1, axis=1)
         q0[np.arange(q0.shape[0]), a] = r + np.logical_not(t) * discount * max_q1
         return self.model.train_on_batch(s, q0)

@@ -21,6 +21,24 @@ class GreedyQPolicy(Policy):
         return np.argmax(self.q(s), axis=1)
 
 
+class EpsilonGreedyQPolicy(GreedyQPolicy):
+    def __init__(self, agent, epsilon):
+        super(EpsilonGreedyQPolicy, self).__init__(agent)
+        self.epsilon = epsilon
+
+    def __call__(self, s):
+        if np.random.uniform(0., 1.) < self.epsilon:
+            return np.array([
+                self.agent.environment.action_space.sample() for _ in range(s.shape[0])
+            ])
+        else:
+            return super(EpsilonGreedyQPolicy, self).__call__(s)
+
+    def step(self, steps=1):
+        self.epsilon -= self.d_epsilon * steps
+        self.epsilon = max(self.epsilon, self.min_epsilon)
+
+
 class AnnealedGreedyQPolicy(GreedyQPolicy):
     def __init__(self, agent, start_epsilon, end_epsilon, steps):
         super(AnnealedGreedyQPolicy, self).__init__(agent)
