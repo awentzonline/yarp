@@ -69,13 +69,23 @@ class QAgent(object):
             while is_running:
                 yield i
                 i += 1
+        last_action = last_native = None
         for step_i in tqdm(range_until_done()):
             terminal = step_i == max_steps - 1
             if last_state is None:
-                action = environment.action_space.sample()
+                native_action = environment.action_space.sample()
+                action = self.action_from_native(native_action)
             else:
                 action = policy(last_state)[0]
-            this_state, reward, terminal, info = environment.step(action)
+                native_action = self.action_to_native(action)
+            # print native_action
+            # if not last_action is None and last_action != action.shape:
+            #     print 'action mismach', last_action, action.shape
+            # if not last_native is None and last_native != native_action.shape:
+            #     print 'action mismach', last_native, native_action.shape
+            # last_action = action.shape
+            # last_native = native_action.shape
+            this_state, reward, terminal, info = environment.step(native_action)
             this_state = this_state[None, ...]
 
             rewards.append(reward)
@@ -109,11 +119,18 @@ class QAgent(object):
                 )
         return full_history
 
+    def action_from_native(self, action):
+        return action
+
+    def action_to_native(self, action):
+        return action
+
     def train_step(self, s, a, r, s1, t, discount=0.9):
         q0 = self.q(s, target=False)
         q1 = self.q(s1, target=True)
         max_q1 = np.max(q1, axis=1)
-        q0[np.arange(q0.shape[0]), a] = r + np.logical_not(t) * discount * max_q1
+        #print np.arange(q0.shape[0]), a
+        q0[np.arange(q0.shape[0]), a.astype(np.int32)] = r + np.logical_not(t) * discount * max_q1
         return self.model.train_on_batch(s, q0)
 
     def train_target_model(self, tau=0.001):
