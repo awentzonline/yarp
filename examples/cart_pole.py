@@ -122,7 +122,7 @@ def main(config, api_key):
                 break
     except KeyboardInterrupt:
         pass
-    environment.monitor.close()
+    #environment.monitor.close()
     # if api_key:
     #     print('uploading')
     #     gym.upload('monitor-data', api_key=api_key)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--episodes', type=int, default=5)
     arg_parser.add_argument('--epsilon', type=float, default=1.0)
     arg_parser.add_argument('--min-epsilon', type=float, default=0.05)
-    arg_parser.add_argument('--epochs', type=int, default=100)
+    arg_parser.add_argument('--epochs', type=int, default=10000)
     arg_parser.add_argument('--anneal-steps', type=int, default=10000)
     arg_parser.add_argument('--sim-steps', type=int, default=300)
     arg_parser.add_argument('--sim-episodes', type=int, default=10)

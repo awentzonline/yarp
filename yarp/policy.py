@@ -46,4 +46,4 @@ class AnnealedGreedyQPolicy(Policy):
 
     def step(self, steps=1):
         self.epsilon -= self.d_epsilon * steps
-        self.epsilon = max(self.epsilon, 0.)
+        self.epsilon = max(self.epsilon, self.end_epsilon)

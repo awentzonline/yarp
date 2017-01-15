@@ -126,7 +126,7 @@ class QAgent(object):
         return action
 
     def train_step(self, s, a, r, s1, t, discount=0.9):
-        q0 = self.q(s, target=False)
+        q0 = self.q(s, target=True)
         q1 = self.q(s1, target=True)
         max_q1 = np.max(q1, axis=1)
         #print q0.shape, a.shape, r.shape, t.shape, max_q1.shape, q0.shape, q1.shape
