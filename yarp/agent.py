@@ -96,7 +96,7 @@ class QAgent(object):
                 self.memory.add((last_state, action, np.array(reward), this_state, np.array(terminal)))
             if self.memory.size > 100 and np.random.uniform(0., 1.) < train_p:
                 train_loss = self.train_from_memory()
-                self.train_target_model()
+                self.train_target_model(tau=self.config.target_update)
                 losses += train_loss
 
             last_state = this_state

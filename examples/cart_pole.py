@@ -112,7 +112,7 @@ def main(config, api_key):
                 max_steps=config.sim_steps, max_episodes=config.sim_episodes
             )
             recent_episode_rewards += episode_rewards
-            needs_training = np.mean(episode_rewards) < 196.
+            #needs_training = np.mean(episode_rewards) < 195.
             print_stats('Loss', losses)
             print_stats('All rewards', rewards)
             print_stats('Episode rewards', episode_rewards)
@@ -149,6 +149,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--lr', type=float, default=0.0000625)
     arg_parser.add_argument('--monitor-path', default='monitor-data')
     arg_parser.add_argument('--env', default='CartPole-v0')
+    arg_parser.add_argument('--target-update', type=float, default=1e-2)
+
     config = arg_parser.parse_args()
 
     api_key = os.environ.get('AIGYM_API_KEY' ,'').strip()
