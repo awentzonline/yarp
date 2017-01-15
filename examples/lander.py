@@ -62,6 +62,14 @@ class DiscreteToContinuousMixin(object):
         #print result,'fart'
         return result
 
+    def train_step(self, s, a, r, s1, t, discount=0.9):
+        q0 = self.q(s, target=False)
+        q1 = self.q(s1, target=True)
+        max_q1 = np.max(q1, axis=1)
+        #print q0.shape, a.shape, r.shape, t.shape, max_q1.shape, q0.shape, q1.shape
+        q0[np.arange(q0.shape[0]), np.argmax(a, axis=1)] = r + np.logical_not(t) * discount * max_q1
+        return self.model.train_on_batch(s, q0)
+
 
 class LanderQAgent(DiscreteToContinuousMixin, QAgent):
     def build_model(self):

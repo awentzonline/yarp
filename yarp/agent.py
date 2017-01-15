@@ -93,7 +93,7 @@ class QAgent(object):
             environment.render()
 
             if not last_state is None:
-                self.memory.add((last_state, action, reward, this_state, terminal))
+                self.memory.add((last_state, action, np.array(reward), this_state, np.array(terminal)))
             if self.memory.size > 100 and np.random.uniform(0., 1.) < train_p:
                 train_loss = self.train_from_memory()
                 self.train_target_model()
@@ -113,10 +113,10 @@ class QAgent(object):
     def train_from_memory(self, num_batches=1):
         full_history = []
         for i in range(num_batches):
-            for s, a, r, s2, t in self.memory.sample(32):
-                full_history.append(
-                    self.train_step(s, a, r, s2, t, discount=self.config.discount)
-                )
+            s, a, r, s2, t = self.memory.sample_batch(32)
+            full_history.append(
+                self.train_step(s, a, r, s2, t, discount=self.config.discount)
+            )
         return full_history
 
     def action_from_native(self, action):
@@ -129,7 +129,7 @@ class QAgent(object):
         q0 = self.q(s, target=False)
         q1 = self.q(s1, target=True)
         max_q1 = np.max(q1, axis=1)
-        #print np.arange(q0.shape[0]), a
+        #print q0.shape, a.shape, r.shape, t.shape, max_q1.shape, q0.shape, q1.shape
         q0[np.arange(q0.shape[0]), a.astype(np.int32)] = r + np.logical_not(t) * discount * max_q1
         return self.model.train_on_batch(s, q0)
 

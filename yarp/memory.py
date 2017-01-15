@@ -23,6 +23,17 @@ class Memory(object):
         data = random.sample(self.data, size)
         return data
 
+    def sample_batch(self, size):
+        samples = random.sample(self.data, size)
+        s = np.concatenate([_[0] for _ in samples])
+        a = np.stack([_[1] for _ in samples])
+        r = np.array([_[2] for _ in samples])
+        s2 = np.concatenate([_[3] for _ in samples])
+        t = np.array([_[4] for _ in samples])
+        # for x in s, a, r, s2, t:
+        #     print x.shape
+        return s, a, r, s2, t
+
     @property
     def size(self):
         return min(len(self.data), self._last_index)
