@@ -78,13 +78,6 @@ class QAgent(object):
             else:
                 action = policy(last_state)[0]
                 native_action = self.action_to_native(action)
-            # print native_action
-            # if not last_action is None and last_action != action.shape:
-            #     print 'action mismach', last_action, action.shape
-            # if not last_native is None and last_native != native_action.shape:
-            #     print 'action mismach', last_native, native_action.shape
-            # last_action = action.shape
-            # last_native = native_action.shape
             this_state, reward, terminal, info = environment.step(native_action)
             this_state = this_state[None, ...]
 
@@ -93,13 +86,14 @@ class QAgent(object):
             environment.render()
 
             if not last_state is None:
-                self.memory.add((last_state, action, np.array(reward), this_state, np.array(terminal)))
+                self.memory.add(last_state, action, reward, terminal, this_state)
             if self.memory.size > 100 and np.random.uniform(0., 1.) < train_p:
                 train_loss = self.train_from_memory()
                 self.train_target_model(tau=self.config.target_update)
                 losses += train_loss
 
             last_state = this_state
+            last_action = action
             if terminal:
                 environment.reset()
                 episode_rewards.append(episode_reward)
@@ -129,8 +123,10 @@ class QAgent(object):
         q0 = self.q(s, target=True)
         q1 = self.q(s1, target=True)
         max_q1 = np.max(q1, axis=1)
+        #original_q0 = np.copy(q0)
         #print q0.shape, a.shape, r.shape, t.shape, max_q1.shape, q0.shape, q1.shape
-        q0[np.arange(q0.shape[0]), a.astype(np.int32)] = r + np.logical_not(t) * discount * max_q1
+        q0[np.arange(q0.shape[0]), a.squeeze()] = r + np.logical_not(t) * discount * max_q1
+        #print q0 - original_q0
         return self.model.train_on_batch(s, q0)
 
     def train_target_model(self, tau=0.001):

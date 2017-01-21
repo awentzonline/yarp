@@ -22,7 +22,7 @@ from yarp.policy import AnnealedGreedyQPolicy, EpsilonGreedyQPolicy
 class CartPoleAgent(QAgent):
     def build_model(self):
         obs_space = self.environment.observation_space
-        input = Input(shape=self.environment.observation_space.low.shape)
+        input = Input(shape=self.environment.observation_space.shape)
         x = Dense(self.config.num_hidden)(input)
         x = LeakyReLU()(x)
         x = Dense(self.environment.action_space.n)(x)
@@ -35,7 +35,7 @@ class CartPoleAgent(QAgent):
 class CartPoleAdvantageAgent(QAgent):
     def build_model(self):
         obs_space = self.environment.observation_space
-        input = Input(shape=self.environment.observation_space.low.shape)
+        input = Input(shape=self.environment.observation_space.shape)
         x = Dense(self.config.num_hidden)(input)
         x = LeakyReLU()(x)
         v_hat = Dense(self.config.num_hidden)(x)
@@ -76,7 +76,7 @@ def main(config, api_key):
 
     print('creating agent')
     agent_class = AGENT_REGISTRY[config.agent]
-    memory = Memory(config.memory)
+    memory = Memory(environment.observation_space.shape, (1,), config.memory)
     agent = agent_class(
         config, environment, memory, name=config.model_name,
         ignore_existing=config.ignore_existing,
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num-hidden', type=int, default=32)
     arg_parser.add_argument('--memory', type=int, default=30000)
     arg_parser.add_argument('--agent', default='duel')
-    arg_parser.add_argument('--lr', type=float, default=0.0000625)
+    arg_parser.add_argument('--lr', type=float, default=0.000625)
     arg_parser.add_argument('--monitor-path', default='monitor-data')
     arg_parser.add_argument('--env', default='CartPole-v0')
     arg_parser.add_argument('--target-update', type=float, default=1e-2)
