@@ -85,8 +85,8 @@ class Memory(object):
             else:
                 break
             tries_remaining -= 1
-        if tries_remaining == 0:
-            print 'failed to find an ideal index'
+        # if tries_remaining == 0:
+        #     print 'failed to find an ideal index'
         return start_index
 
 
