@@ -8,7 +8,7 @@ import numpy as np
 from keras import backend as K
 from keras.layers import (
     Activation, Convolution2D, Dense, Dropout, Flatten, GlobalAveragePooling2D,
-    Input, LeakyReLU, merge, RepeatVector
+    GRU, Input, LeakyReLU, LSTM, merge, RepeatVector
 )
 from keras.models import Model, Sequential
 from keras.optimizers import Adam, RMSprop
@@ -55,8 +55,36 @@ class AtariAdvantageAgent(QAgent):
             AdvantageAggregator=AdvantageAggregator, **kwargs)
 
 
+class AtariAdvantageMultiStepAgent(QAgent):
+    def build_model(self):
+        print self.memory.state_sample_shape
+        input = Input(shape=self.memory.state_sample_shape)
+        rnn = LSTM
+        x = rnn(self.config.num_hidden, return_sequences=True)(input)
+        x = Activation('tanh')(x)
+
+        v_hat = rnn(self.config.num_hidden)(x)
+        #v_hat = Dense(self.config.num_hidden)(x)
+        v_hat = Activation('tanh')(v_hat)
+        v_hat = Dense(1)(v_hat)
+
+        a_hat = rnn(self.config.num_hidden)(x)
+        #a_hat = Dense(self.config.num_hidden)(x)
+        a_hat = Activation('tanh')(a_hat)
+        a_hat = Dense(self.environment.action_space.n)(a_hat)
+        x = AdvantageAggregator()([v_hat, a_hat])
+        model = Model([input], [x])
+        optimizer = RMSprop(lr=self.config.lr, clipnorm=10., rho=0.99, epsilon=0.01)
+        model.compile(optimizer=optimizer, loss='mse')
+        return model
+
+    def model_custom_objects(self, **kwargs):
+        return super(AtariAdvantageMultiStepAgent, self).model_custom_objects(
+            AdvantageAggregator=AdvantageAggregator, **kwargs)
+
+
 AGENT_REGISTRY = dict(
-    dqn=AtariAgent, duel=AtariAdvantageAgent
+    dqn=AtariAgent, duel=AtariAdvantageAgent, rduel=AtariAdvantageMultiStepAgent
 )
 
 def print_stats(label, arr):
@@ -76,7 +104,13 @@ def main(config, api_key):
 
     print('creating agent')
     agent_class = AGENT_REGISTRY[config.agent]
-    memory = Memory(environment.observation_space.shape, (1,), config.memory)
+    if config.agent == 'rduel':
+        length = 3
+    else:
+        length = 1
+    memory = Memory(
+        environment.observation_space.shape, (1,), config.memory,
+        sample_length=length)
     agent = agent_class(
         config, environment, memory, name=config.model_name,
         ignore_existing=config.ignore_existing,
@@ -145,7 +179,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--save-rate', type=int, default=10)
     arg_parser.add_argument('--num-hidden', type=int, default=96)
     arg_parser.add_argument('--memory', type=int, default=100000)
-    arg_parser.add_argument('--agent', default='duel')
+    arg_parser.add_argument('--agent', default='rduel')
     arg_parser.add_argument('--lr', type=float, default=0.000625)
     arg_parser.add_argument('--monitor-path', default='monitor-data')
     arg_parser.add_argument('--env', default='Breakout-ram-v0')

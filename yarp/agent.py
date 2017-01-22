@@ -1,4 +1,5 @@
 import os
+from collections import deque
 
 import numpy as np
 from keras.models import load_model
@@ -70,15 +71,21 @@ class QAgent(object):
                 yield i
                 i += 1
         last_action = last_native = None
+        state_history = deque([], self.memory.sample_length)
         for step_i in tqdm(range_until_done()):
             terminal = step_i == max_steps - 1
-            if last_state is None:
+            if len(state_history) < self.memory.sample_length:
                 native_action = environment.action_space.sample()
                 action = self.action_from_native(native_action)
             else:
-                action = policy(last_state)[0]
+                if self.memory.sample_length == 1:
+                    full_state = last_state
+                else:
+                    full_state = np.stack(state_history)[None, ...]
+                action = policy(full_state)[0]
                 native_action = self.action_to_native(action)
             this_state, reward, terminal, info = environment.step(native_action)
+            state_history.append(this_state)
             this_state = this_state[None, ...]
 
             rewards.append(reward)
